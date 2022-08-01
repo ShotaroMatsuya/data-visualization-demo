@@ -1,7 +1,7 @@
 /*
  *    main.js
  *    Mastering Data Visualization with D3.js
- *    3.6 - Band scales
+ *    3.7 - D3 min, max, and extent
  */
 
 const svg = d3
@@ -17,20 +17,15 @@ d3.json('data/buildings.json').then(data => {
 
   const x = d3
     .scaleBand()
-    .domain([
-      'Burj Khalifa',
-      'Shanghai Tower',
-      'Abraj Al-Bait Clock Tower',
-      'Ping An Finance Centre',
-      'Lotte World Tower',
-      'One World Trade Center',
-      'CTF Finance Centre',
-    ])
+    .domain(data.map(d => d.name))
     .range([0, 400])
     .paddingInner(0.3)
     .paddingOuter(0.2);
 
-  const y = d3.scaleLinear().domain([0, 828]).range([0, 400]);
+  const y = d3
+    .scaleLinear()
+    .domain([0, d3.max(data, d => d.height)])
+    .range([0, 400]);
 
   const rects = svg.selectAll('rect').data(data);
 

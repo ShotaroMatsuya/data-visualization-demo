@@ -1,8 +1,10 @@
 /*
  *    main.js
  *    Mastering Data Visualization with D3.js
- *    2.4 - Adding SVGs with D3
+ *    2.6 - Adding SVGs with D3
  */
+
+const data = [25, 20, 10, 12, 15];
 
 const svg = d3
   .select('#chart-area')
@@ -10,9 +12,12 @@ const svg = d3
   .attr('width', 400)
   .attr('height', 400);
 
-svg
+const circles = svg.selectAll('circle').data(data);
+
+circles
+  .enter()
   .append('circle')
-  .attr('cx', 100)
+  .attr('cx', (d, i) => i * 50 + 50)
   .attr('cy', 250)
-  .attr('r', 70)
+  .attr('r', d => d)
   .attr('fill', 'red');

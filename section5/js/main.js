@@ -1,12 +1,14 @@
 /*
  *    main.js
  *    Mastering Data Visualization with D3.js
- *    5.4 - The D3 update pattern
+ *    5.4 - Making our chart dynamic
  */
 
 const MARGIN = { LEFT: 100, RIGHT: 10, TOP: 10, BOTTOM: 100 };
 const WIDTH = 600 - MARGIN.LEFT - MARGIN.RIGHT;
 const HEIGHT = 400 - MARGIN.TOP - MARGIN.BOTTOM;
+
+let flag = true;
 
 const svg = d3
   .select('#chart-area')
@@ -28,14 +30,14 @@ g.append('text')
   .text('Month');
 
 // Y label
-g.append('text')
+const yLabel = g
+  .append('text')
   .attr('class', 'y axis-label')
   .attr('x', -(HEIGHT / 2))
   .attr('y', -60)
   .attr('font-size', '20px')
   .attr('text-anchor', 'middle')
-  .attr('transform', 'rotate(-90)')
-  .text('Revenue ($)');
+  .attr('transform', 'rotate(-90)');
 
 const x = d3.scaleBand().range([0, WIDTH]).paddingInner(0.3).paddingOuter(0.2);
 
@@ -52,10 +54,12 @@ const yAxisGroup = g.append('g').attr('class', 'y axis');
 d3.csv('data/revenues.csv').then(data => {
   data.forEach(d => {
     d.revenue = Number(d.revenue);
+    d.profit = Number(d.profit);
   });
 
   d3.interval(() => {
     update(data);
+    flag = !flag;
     console.log('update');
   }, 1000);
 
@@ -63,9 +67,10 @@ d3.csv('data/revenues.csv').then(data => {
 });
 
 function update(data) {
-  // domainのみをupdateする
+  const value = flag ? 'profit' : 'revenue';
+  // domainをupdateする必要がある
   x.domain(data.map(d => d.month));
-  y.domain([0, d3.max(data, d => d.revenue)]);
+  y.domain([0, d3.max(data, d => d[value])]);
 
   const xAxisCall = d3.axisBottom(x);
   xAxisGroup
@@ -90,18 +95,22 @@ function update(data) {
 
   // UPDATE old elements present in new data.
   rects
-    .attr('y', d => y(d.revenue))
+    .attr('y', d => y(d[value]))
     .attr('x', d => x(d.month))
     .attr('width', x.bandwidth)
-    .attr('height', d => HEIGHT - y(d.revenue));
+    .attr('height', d => HEIGHT - y(d[value]));
 
   // ENTER new elements present in new data.
   rects
     .enter()
     .append('rect')
-    .attr('y', d => y(d.revenue))
+    .attr('y', d => y(d[value]))
     .attr('x', d => x(d.month))
     .attr('width', x.bandwidth)
-    .attr('height', d => HEIGHT - y(d.revenue))
+    .attr('height', d => HEIGHT - y(d[value]))
     .attr('fill', 'grey');
+
+  // labelの文字のみupdate
+  const text = flag ? 'Profit ($)' : 'Revenue ($)';
+  yLabel.text(text);
 }

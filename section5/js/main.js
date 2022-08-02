@@ -1,7 +1,7 @@
 /*
  *    main.js
  *    Mastering Data Visualization with D3.js
- *    5.3 - Adding an update function
+ *    5.4 - The D3 update pattern
  */
 
 const MARGIN = { LEFT: 100, RIGHT: 10, TOP: 10, BOTTOM: 100 };
@@ -86,8 +86,14 @@ function update(data) {
   const rects = g.selectAll('rect').data(data);
 
   // EXIT old elements not present in new data.
+  rects.exit().remove();
 
   // UPDATE old elements present in new data.
+  rects
+    .attr('y', d => y(d.revenue))
+    .attr('x', d => x(d.month))
+    .attr('width', x.bandwidth)
+    .attr('height', d => HEIGHT - y(d.revenue));
 
   // ENTER new elements present in new data.
   rects

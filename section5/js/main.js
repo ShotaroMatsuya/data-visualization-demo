@@ -1,7 +1,7 @@
 /*
  *    main.js
  *    Mastering Data Visualization with D3.js
- *    5.4 - Making our chart dynamic
+ *    5.7 - D3 Transitions
  */
 
 const MARGIN = { LEFT: 100, RIGHT: 10, TOP: 10, BOTTOM: 100 };
@@ -58,8 +58,9 @@ d3.csv('data/revenues.csv').then(data => {
   });
 
   d3.interval(() => {
-    update(data);
     flag = !flag;
+    const newData = flag ? data : data.slice(1);
+    update(newData);
     console.log('update');
   }, 1000);
 
@@ -68,12 +69,17 @@ d3.csv('data/revenues.csv').then(data => {
 
 function update(data) {
   const value = flag ? 'profit' : 'revenue';
+  // transition settings
+  const t = d3.transition().duration(750);
+
   // domainをupdateする必要がある
   x.domain(data.map(d => d.month));
   y.domain([0, d3.max(data, d => d[value])]);
 
   const xAxisCall = d3.axisBottom(x);
+  // callの前にtransitionを追加
   xAxisGroup
+    .transition(t)
     .call(xAxisCall)
     .selectAll('text')
     .attr('y', '10')
@@ -85,30 +91,55 @@ function update(data) {
     .axisLeft(y)
     .ticks(3)
     .tickFormat(d => d + 'm');
-  yAxisGroup.call(yAxisCall);
+
+  // callの前にtransitionを追加
+  yAxisGroup.transition(t).call(yAxisCall);
 
   // JOIN new data with old elements.
-  const rects = g.selectAll('rect').data(data);
+  const rects = g.selectAll('rect').data(data, d => d.month);
 
   // EXIT old elements not present in new data.
-  rects.exit().remove();
-
-  // UPDATE old elements present in new data.
+  // 削除時にtransition
   rects
-    .attr('y', d => y(d[value]))
-    .attr('x', d => x(d.month))
-    .attr('width', x.bandwidth)
-    .attr('height', d => HEIGHT - y(d[value]));
+    .exit()
+    .attr('fill', 'red')
+    .transition(t)
+    .attr('height', 0)
+    .attr('y', y(0))
+    .remove();
 
-  // ENTER new elements present in new data.
+  // // UPDATE old elements present in new data.
+  // rects
+  //   .transition(t)
+  //   .attr('y', d => y(d[value]))
+  //   .attr('x', d => x(d.month))
+  //   .attr('width', x.bandwidth)
+  //   .attr('height', d => HEIGHT - y(d[value]));
+
+  // // ENTER new elements present in new data.
+  // rects
+  //   .enter()
+  //   .append('rect')
+  //   .attr('x', d => x(d.month))
+  //   .attr('width', x.bandwidth)
+  //   .attr('fill', 'grey')
+  //   .transition(t)
+  //   .attr('y', d => y(d[value]))
+  //   .attr('height', d => HEIGHT - y(d[value]));
+
+  // ENTER new elements present in new data AND UPDATE old elements present in new data. (with merge method)
   rects
     .enter()
     .append('rect')
-    .attr('y', d => y(d[value]))
+    .attr('fill', 'grey')
+    .attr('y', y(0))
+    .attr('height', 0)
+    .merge(rects)
+    .transition(t)
     .attr('x', d => x(d.month))
     .attr('width', x.bandwidth)
-    .attr('height', d => HEIGHT - y(d[value]))
-    .attr('fill', 'grey');
+    .attr('y', d => y(d[value]))
+    .attr('height', d => HEIGHT - y(d[value]));
 
   // labelの文字のみupdate
   const text = flag ? 'Profit ($)' : 'Revenue ($)';

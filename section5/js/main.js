@@ -1,7 +1,7 @@
 /*
  *    main.js
  *    Mastering Data Visualization with D3.js
- *    5.7 - D3 Transitions
+ *    5.8 - Scatter plots in D3
  */
 
 const MARGIN = { LEFT: 100, RIGHT: 10, TOP: 10, BOTTOM: 100 };
@@ -96,50 +96,23 @@ function update(data) {
   yAxisGroup.transition(t).call(yAxisCall);
 
   // JOIN new data with old elements.
-  const rects = g.selectAll('rect').data(data, d => d.month);
+  const rects = g.selectAll('circle').data(data, d => d.month);
 
   // EXIT old elements not present in new data.
   // 削除時にtransition
-  rects
-    .exit()
-    .attr('fill', 'red')
-    .transition(t)
-    .attr('height', 0)
-    .attr('y', y(0))
-    .remove();
-
-  // // UPDATE old elements present in new data.
-  // rects
-  //   .transition(t)
-  //   .attr('y', d => y(d[value]))
-  //   .attr('x', d => x(d.month))
-  //   .attr('width', x.bandwidth)
-  //   .attr('height', d => HEIGHT - y(d[value]));
-
-  // // ENTER new elements present in new data.
-  // rects
-  //   .enter()
-  //   .append('rect')
-  //   .attr('x', d => x(d.month))
-  //   .attr('width', x.bandwidth)
-  //   .attr('fill', 'grey')
-  //   .transition(t)
-  //   .attr('y', d => y(d[value]))
-  //   .attr('height', d => HEIGHT - y(d[value]));
+  rects.exit().attr('fill', 'red').transition(t).attr('cy', y(0)).remove();
 
   // ENTER new elements present in new data AND UPDATE old elements present in new data. (with merge method)
   rects
     .enter()
-    .append('rect')
+    .append('circle')
     .attr('fill', 'grey')
-    .attr('y', y(0))
-    .attr('height', 0)
+    .attr('cy', y(0))
+    .attr('r', 5)
     .merge(rects)
     .transition(t)
-    .attr('x', d => x(d.month))
-    .attr('width', x.bandwidth)
-    .attr('y', d => y(d[value]))
-    .attr('height', d => HEIGHT - y(d[value]));
+    .attr('cx', d => x(d.month) + x.bandwidth() / 2)
+    .attr('cy', d => y(d[value]));
 
   // labelの文字のみupdate
   const text = flag ? 'Profit ($)' : 'Revenue ($)';

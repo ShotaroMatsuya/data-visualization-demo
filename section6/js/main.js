@@ -1,7 +1,7 @@
 /*
  *    main.js
  *    Mastering Data Visualization with D3.js
- *    6.5 - Event listeners and handlers in D3
+ *    6.7 - jQuery UI slider
  */
 
 const MARGIN = { LEFT: 100, RIGHT: 10, TOP: 10, BOTTOM: 100 };
@@ -161,6 +161,16 @@ $('#continent-select').on('change', () => {
   update(formattedData[time]);
 });
 
+$('#date-slider').slider({
+  min: 1800,
+  max: 2014,
+  step: 1,
+  slide: (event, ui) => {
+    time = ui.value - 1800;
+    update(formattedData[time]);
+  },
+});
+
 function update(data) {
   // standard transition time for the visualization
   const t = d3.transition().duration(100);
@@ -195,4 +205,7 @@ function update(data) {
 
   // update the time label
   timeLabel.text(String(time + 1800));
+
+  $('#year')[0].innerHTML = String(time + 1800);
+  $('#date-slider').slider('value', Number(time + 1800));
 }

@@ -8,8 +8,6 @@ const MARGIN = { LEFT: 100, RIGHT: 100, TOP: 50, BOTTOM: 100 };
 const WIDTH = 800 - MARGIN.LEFT - MARGIN.RIGHT;
 const HEIGHT = 500 - MARGIN.TOP - MARGIN.BOTTOM;
 
-let filteredData; // nullを取り除いたもの
-
 const svg = d3
   .select('#chart-area')
   .append('svg')
@@ -20,53 +18,11 @@ const g = svg
   .append('g')
   .attr('transform', `translate(${MARGIN.LEFT}, ${MARGIN.TOP})`);
 
-// time parsers/ formatters
+// time parsers/formatters
 const parseTime = d3.timeParse('%d/%m/%Y');
 const formatTime = d3.timeFormat('%d/%m/%Y');
-
-// for tooltip (マウスの現在座標からその位置よりも左側に位置するデータをbisector().leftで取得)
+// for tooltip
 const bisectDate = d3.bisector(d => d.date).left;
-
-d3.json('data/coins.json').then(data => {
-  // clean data
-  filteredData = {};
-  Object.keys(data).forEach(coin => {
-    filteredData[coin] = data[coin]
-      .filter(d => {
-        return !(d['price_usd'] == null);
-      })
-      .map(d => {
-        d['price_usd'] = Number(d['price_usd']);
-        d['24h_vol'] = Number(d['24h_vol']);
-        d['market_cap'] = Number(d['market_cap']);
-        d['date'] = parseTime(d['date']);
-        return d;
-      });
-  });
-  update();
-});
-
-// event listeners
-$('#coin-select').on('change', update);
-$('#var-select').on('change', update);
-
-// event listeners
-$('#coin-select').on('change', update);
-$('#var-select').on('change', update);
-
-// add jQuery UI slider
-$('#date-slider').slider({
-  range: true,
-  max: parseTime('31/10/2017').getTime(),
-  min: parseTime('12/5/2013').getTime(),
-  step: 86400000, // one day
-  values: [parseTime('12/5/2013').getTime(), parseTime('31/10/2017').getTime()],
-  slide: (event, ui) => {
-    $('#dateLabel1').text(formatTime(new Date(ui.values[0])));
-    $('#dateLabel2').text(formatTime(new Date(ui.values[1])));
-    update();
-  },
-});
 
 // add the line for the first time
 g.append('path')
@@ -94,7 +50,7 @@ const yLabel = g
   .attr('text-anchor', 'middle')
   .text('Price ($)');
 
-// scales(range)
+// scales
 const x = d3.scaleTime().range([0, WIDTH]);
 const y = d3.scaleLinear().range([HEIGHT, 0]);
 
@@ -112,8 +68,48 @@ const xAxis = g
   .attr('transform', `translate(0, ${HEIGHT})`);
 const yAxis = g.append('g').attr('class', 'y axis');
 
+// event listeners
+$('#coin-select').on('change', update);
+$('#var-select').on('change', update);
+
+// add jQuery UI slider
+$('#date-slider').slider({
+  range: true,
+  max: parseTime('31/10/2017').getTime(),
+  min: parseTime('12/5/2013').getTime(),
+  step: 86400000, // one day
+  values: [parseTime('12/5/2013').getTime(), parseTime('31/10/2017').getTime()],
+  slide: (event, ui) => {
+    $('#dateLabel1').text(formatTime(new Date(ui.values[0])));
+    $('#dateLabel2').text(formatTime(new Date(ui.values[1])));
+    update();
+  },
+});
+
+d3.json('data/coins.json').then(data => {
+  // prepare and clean data
+  filteredData = {};
+  Object.keys(data).forEach(coin => {
+    filteredData[coin] = data[coin]
+      .filter(d => {
+        return !(d['price_usd'] == null);
+      })
+      .map(d => {
+        d['price_usd'] = Number(d['price_usd']);
+        d['24h_vol'] = Number(d['24h_vol']);
+        d['market_cap'] = Number(d['market_cap']);
+        d['date'] = parseTime(d['date']);
+        return d;
+      });
+  });
+
+  // run the visualization for the first time
+  update();
+});
+
 function update() {
   const t = d3.transition().duration(1000);
+
   // filter data based on selections
   const coin = $('#coin-select').val();
   const yValue = $('#var-select').val();
@@ -121,6 +117,14 @@ function update() {
   const dataTimeFiltered = filteredData[coin].filter(d => {
     return d.date >= sliderValues[0] && d.date <= sliderValues[1];
   });
+
+  // update scales
+  x.domain(d3.extent(dataTimeFiltered, d => d.date));
+  y.domain([
+    d3.min(dataTimeFiltered, d => d[yValue]) / 1.005,
+    d3.max(dataTimeFiltered, d => d[yValue]) * 1.005,
+  ]);
+
   // fix for format values
   const formatSi = d3.format('.2s');
   function formatAbbreviation(x) {
@@ -133,13 +137,6 @@ function update() {
     }
     return s;
   }
-
-  // update scales
-  x.domain(d3.extent(dataTimeFiltered, d => d.date));
-  y.domain([
-    d3.min(dataTimeFiltered, d => d[yValue]) / 1.005,
-    d3.max(dataTimeFiltered, d => d[yValue] * 1.005),
-  ]);
 
   // update axes
   xAxisCall.scale(x);
@@ -193,7 +190,7 @@ function update() {
 
   /******************************** Tooltip Code ********************************/
 
-  // line path generator
+  // Path generator
   line = d3
     .line()
     .x(d => x(d.date))

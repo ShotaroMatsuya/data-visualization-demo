@@ -1,7 +1,7 @@
 /*
  *    main.js
  *    Mastering Data Visualization with D3.js
- *    6.4 - Introducing tooltips
+ *    6.5 - Event listeners and handlers in D3
  */
 
 const MARGIN = { LEFT: 100, RIGHT: 10, TOP: 10, BOTTOM: 100 };
@@ -19,6 +19,8 @@ const g = svg
   .attr('transform', `translate(${MARGIN.LEFT}, ${MARGIN.TOP})`);
 
 let time = 0;
+let interval;
+let formattedData;
 
 // Tooltip
 const tip = d3
@@ -116,7 +118,7 @@ continents.forEach((continent, i) => {
 
 d3.json('data/data.json').then(function (data) {
   // clean data
-  const formattedData = data.map(year => {
+  formattedData = data.map(year => {
     return year['countries']
       .filter(country => {
         const dataExists = country.income && country.life_exp;
@@ -129,23 +131,51 @@ d3.json('data/data.json').then(function (data) {
       });
   });
 
-  // run the code every 0.1 second
-  d3.interval(function () {
-    // at the end of our data, loop back
-    time = time < 214 ? time + 1 : 0;
-    update(formattedData[time]);
-  }, 100);
-
   // first run of the visualization
   update(formattedData[0]);
+});
+
+function step() {
+  // at the end of our data, loop back
+  time = time < 214 ? time + 1 : 0;
+  update(formattedData[time]);
+}
+
+$('#play-button').on('click', function () {
+  const button = $(this);
+  if (button.text() === 'Play') {
+    button.text('Pause');
+    interval = setInterval(step, 100);
+  } else {
+    button.text('Play');
+    clearInterval(interval);
+  }
+});
+
+$('#reset-button').on('click', () => {
+  time = 0;
+  update(formattedData[0]);
+});
+
+$('#continent-select').on('change', () => {
+  update(formattedData[time]);
 });
 
 function update(data) {
   // standard transition time for the visualization
   const t = d3.transition().duration(100);
 
+  const continent = $('#continent-select').val();
+
+  const filteredData = data.filter(d => {
+    if (continent === 'all') return true;
+    else {
+      return d.continent == continent;
+    }
+  });
+
   // JOIN new data with old elements.
-  const circles = g.selectAll('circle').data(data, d => d.country);
+  const circles = g.selectAll('circle').data(filteredData, d => d.country);
 
   // EXIT old elements not present in new data.
   circles.exit().remove();

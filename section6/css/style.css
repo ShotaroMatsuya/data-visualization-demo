@@ -12,3 +12,24 @@
 	height: 60px;
 	padding: 5px 0px;
 }
+
+#reset-button, #play-button, #slider-div {
+	float: left;
+	margin-right:10px;
+}
+
+#slider-div {
+	width:300px;
+	margin-left:10px;
+}
+
+#reset-button, #play-button {
+	margin-top: 5px;
+	margin-bottom:10px;
+}
+
+#continent-select {
+	width: 150px;
+	float:right;
+	margin-top:5px;
+}
